@@ -35,12 +35,24 @@
         </v-tabs-items>
       </v-container>
     </v-main>
+
+    <!-- Snackbar thông báo -->
+    <v-snackbar
+      v-model="snackbar"
+      :timeout="2000"
+      :color="snackbarColor"
+    >
+      {{ snackbarText }}
+      <template #action="{ attrs }">
+        <v-btn text v-bind="attrs" @click="snackbar = false">Đóng</v-btn>
+      </template>
+    </v-snackbar>
   </v-app>
 </template>
 
 <script>
-import FoodManager from './components/FoodManager.vue'
-import MenuBuilder from './components/MenuBuilder.vue'
+import FoodManager from './components/FoodManager.vue';
+import MenuBuilder from './components/MenuBuilder.vue';
 
 export default {
   name: 'App',
@@ -51,9 +63,24 @@ export default {
   data() {
     return {
       tab: 0,
-    }
+      snackbar: false,
+      snackbarText: '',
+      snackbarColor: 'success',
+    };
   },
-}
+  created() {
+    // Lắng nghe sự kiện snackbar từ các component con
+    this.$root.$on('snackbar', (payload) => {
+      this.snackbarText = payload.text;
+      this.snackbarColor = payload.color;
+      this.snackbar = true;
+    });
+  },
+  beforeDestroy() {
+    // Hủy lắng nghe sự kiện khi component bị hủy
+    this.$root.$off('snackbar');
+  },
+};
 </script>
 
 <style>

@@ -16,4 +16,8 @@
       "scripthost"
     ]
   }
+,
+"exclude": [
+  "src/components/FoodForm.vue"
+]
 }
