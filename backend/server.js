@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const foodRoutes = require('./routes/foodRoutes'); // Import routes cho món ăn
 const menuRoutes = require('./routes/menuRoutes'); // Import routes cho menu
+const userRoutes = require('./routes/userRoutes'); // Import routes cho user
 
 const app = express();
 const PORT = 3000;
@@ -23,6 +24,9 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 app.use('/api/foods', foodRoutes); // Routes cho món ăn
 app.use('/api/menu', menuRoutes); // Routes cho menu
 app.use('/api/menus', menuRoutes); // Routes cho menu (GET)
+app.use('/api/users', userRoutes); // Routes cho user
+
+
 
 app.listen(PORT, () => {
   console.log(`Backend server chạy tại http://localhost:${PORT}`);
