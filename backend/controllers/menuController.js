@@ -1,20 +1,18 @@
 const Menu = require('../models/menu');
 
-// Tạo menu mới
 const createMenu = async (req, res) => {
-  console.log('Received request body:', req.body); // Thêm log
   try {
-    const { name, menu } = req.body;
-    if (!name || !menu || !Array.isArray(menu)) {
+    const { name, layout } = req.body; // Đổi 'menu' thành 'items'
+    if (!name || !layout || !Array.isArray(layout)) {
       return res.status(400).json({ message: 'Dữ liệu menu không hợp lệ' });
     }
-    const newMenu = new Menu({ name, items: menu });
-    console.log('Before saving:', newMenu); // Thêm log
+    const newMenu = new Menu({ name, layout });
+    console.log('Before saving:', newMenu);
     await newMenu.save();
-    console.log('After saving:', newMenu); // Thêm log
+    console.log('After saving:', newMenu);
     res.status(201).json(newMenu);
   } catch (err) {
-    console.error('Error saving menu:', err); // Thêm log lỗi
+    console.error('Error saving menu:', err);
     res.status(400).json({ message: err.message });
   }
 };
@@ -43,10 +41,10 @@ const deleteMenu = async (req, res) => {
 // Cập nhật menu
 const updateMenu = async (req, res) => {
   try {
-    const { name, items } = req.body;
+    const { name, layout } = req.body;
     const menu = await Menu.findByIdAndUpdate(
       req.params.id,
-      { name, items },
+      { name, layout },
       { new: true }
     );
     if (!menu) return res.status(404).json({ message: 'Không tìm thấy menu' });

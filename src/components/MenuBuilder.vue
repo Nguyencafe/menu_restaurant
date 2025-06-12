@@ -14,37 +14,80 @@
               required
               class="mb-4"
             />
-            <draggable
-              v-model="menu"
-              item-key="_id"
-              group="foods"
-              class="drag-area pa-2"
-              :animation="200"
+            <!-- Nút thêm block -->
+            <v-row class="mb-2">
+              <v-btn small color="primary" @click="addTitleBlock">Thêm tiêu đề</v-btn>
+              <v-btn small color="secondary" @click="addTextBlock">Thêm đoạn văn</v-btn>
+              <v-btn small color="info" @click="addImageBlock">Thêm ảnh</v-btn>
+            </v-row>
+            <grid-layout
+              :layout.sync="layout"
+              :col-num="12"
+              :row-height="30"
+              :is-draggable="true"
+              :is-resizable="true"
+              :vertical-compact="true"
+              :use-css-transforms="true"
+              class="grid-area"
             >
-              <v-list-item
-                v-for="item in menu"
-                :key="item._id"
-                class="menu-item"
+              <grid-item
+                v-for="item in layout"
+                :key="item.i"
+                :x="item.x"
+                :y="item.y"
+                :w="item.w"
+                :h="item.h"
+                :i="item.i"
               >
-                <v-list-item-avatar>
-                  <v-img :src="item.image || 'https://via.placeholder.com/50'" aspect-ratio="1" />
-                </v-list-item-avatar>
-                <v-list-item-content>
-                  <v-list-item-title class="text-h6 font-weight-bold">{{ item.name }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-truncate">{{ item.description || 'Không có mô tả' }}</v-list-item-subtitle>
-                </v-list-item-content>
-                <v-list-item-action>
-                  <v-list-item-action-text class="text-right price">
-                    {{ item.price.toLocaleString('vi-VN') }} đ
-                  </v-list-item-action-text>
-                  <v-btn icon small @click="removeFromMenu(item._id)">
+                <!-- Block món ăn -->
+                <div v-if="item.type === 'menuItem'">
+                  <v-list-item>
+                    <v-list-item-avatar>
+                      <v-img :src="item.data.image || 'https://via.placeholder.com/50'" aspect-ratio="1" />
+                    </v-list-item-avatar>
+                    <v-list-item-content>
+                      <v-list-item-title class="text-h6 font-weight-bold">{{ item.data.name }}</v-list-item-title>
+                      <v-list-item-subtitle class="text-truncate">{{ item.data.description || 'Không có mô tả' }}</v-list-item-subtitle>
+                    </v-list-item-content>
+                    <v-list-item-action>
+                      <v-list-item-action-text class="text-right price">
+                        {{ item.data.price.toLocaleString('vi-VN') }} đ
+                      </v-list-item-action-text>
+                      <v-btn icon small @click="removeFromLayout(item.i)">
+                        <v-icon color="error">mdi-close</v-icon>
+                      </v-btn>
+                    </v-list-item-action>
+                  </v-list-item>
+                </div>
+                <!-- Block tiêu đề -->
+                <div v-else-if="item.type === 'title'" @dblclick="editBlock(item)">
+                  <div :style="{color: item.data.color, textAlign: item.data.align, fontSize: item.data.fontSize + 'px', fontWeight: 'bold'}">
+                    {{ item.data.text }}
+                  </div>
+                  <v-btn icon small @click="removeFromLayout(item.i)">
                     <v-icon color="error">mdi-close</v-icon>
                   </v-btn>
-                </v-list-item-action>
-              </v-list-item>
-            </draggable>
-            <v-alert v-if="!menu.length" type="info" dense>
-              Chưa có món nào trong menu
+                </div>
+                <!-- Block đoạn văn -->
+                <div v-else-if="item.type === 'text'" @dblclick="editBlock(item)">
+                  <div :style="{color: item.data.color, textAlign: item.data.align, fontSize: item.data.fontSize + 'px'}">
+                    {{ item.data.text }}
+                  </div>
+                  <v-btn icon small @click="removeFromLayout(item.i)">
+                    <v-icon color="error">mdi-close</v-icon>
+                  </v-btn>
+                </div>
+                <!-- Block ảnh -->
+                <div v-else-if="item.type === 'image'" @dblclick="editBlock(item)">
+                  <v-img :src="item.data.url" :alt="item.data.alt" contain height="100%"></v-img>
+                  <v-btn icon small @click="removeFromLayout(item.i)">
+                    <v-icon color="error">mdi-close</v-icon>
+                  </v-btn>
+                </div>
+              </grid-item>
+            </grid-layout>
+            <v-alert v-if="!layout.length" type="info" dense>
+              Chưa có thành phần nào trong menu
             </v-alert>
           </v-card-text>
           <v-card-actions>
@@ -65,7 +108,7 @@
             </v-btn>
             <v-btn
               color="success"
-              :disabled="!menu.length || !menuName"
+              :disabled="!layout.length || !menuName"
               @click="saveMenu"
             >
               Lưu Menu
@@ -108,7 +151,7 @@
                 v-for="item in foods"
                 :key="item._id"
                 class="menu-item"
-                draggable
+                @click="addToLayout(item)"
               >
                 <v-list-item-avatar>
                   <v-img :src="item.image || 'https://via.placeholder.com/50'" aspect-ratio="1" />
@@ -130,7 +173,7 @@
           </v-card-text>
         </v-card>
 
-        <!-- Danh sách menu -->
+        <!-- Danh sách menu (giữ nguyên) -->
         <v-card outlined class="pa-4">
           <v-card-title class="text-h6">
             Danh sách menu
@@ -156,6 +199,9 @@
                 :key="menuItem._id"
                 @click="selectMenu(menuItem._id)"
               >
+                <v-list-item-avatar>
+                  <v-img :src="menuItem.image || 'https://via.placeholder.com/50'" aspect-ratio="1" />
+                </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title>{{ menuItem.name || 'Menu không tên' }}</v-list-item-title>
                 </v-list-item-content>
@@ -174,7 +220,26 @@
       </v-col>
     </v-row>
 
-    <!-- Dialog cập nhật menu -->
+    <!-- Dialog chỉnh sửa block -->
+    <v-dialog v-model="editDialog" max-width="400">
+      <v-card>
+        <v-card-title>Chỉnh sửa block</v-card-title>
+        <v-card-text>
+          <v-text-field v-if="editBlockData && editBlockData.text !== undefined" v-model="editBlockData.text" label="Nội dung"></v-text-field>
+          <v-text-field v-if="editBlockData && editBlockData.url !== undefined" v-model="editBlockData.url" label="Link ảnh"></v-text-field>
+          <v-color-picker v-if="editBlockData && editBlockData.color !== undefined" v-model="editBlockData.color" label="Màu chữ" flat></v-color-picker>
+          <v-slider v-if="editBlockData && editBlockData.fontSize !== undefined" v-model="editBlockData.fontSize" min="12" max="48" label="Cỡ chữ"></v-slider>
+          <v-select v-if="editBlockData && editBlockData.align !== undefined" v-model="editBlockData.align" :items="['left','center','right']" label="Căn lề"></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn color="primary" text @click="saveEditBlock">Lưu</v-btn>
+          <v-btn color="grey" text @click="editDialog=false">Hủy</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog cập nhật menu (giữ nguyên hoặc điều chỉnh tương tự) -->
     <v-dialog v-model="updateMenuDialog" max-width="500">
       <v-card>
         <v-card-title>Cập nhật Menu</v-card-title>
@@ -185,37 +250,69 @@
             :rules="[v => !!v || 'Tên menu không được để trống']"
             required
           />
-          <draggable
-            v-model="menu"
-            item-key="_id"
-            group="foods"
-            class="drag-area pa-2"
-            :animation="200"
+          <grid-layout
+            :layout.sync="layout"
+            :col-num="12"
+            :row-height="30"
+            :is-draggable="true"
+            :is-resizable="true"
+            :vertical-compact="true"
+            :use-css-transforms="true"
           >
-            <v-list-item
-              v-for="item in menu"
-              :key="item._id"
-              class="menu-item"
+            <grid-item
+              v-for="item in layout"
+              :key="item.i"
+              :x="item.x"
+              :y="item.y"
+              :w="item.w"
+              :h="item.h"
+              :i="item.i"
             >
-              <v-list-item-avatar>
-                <v-img :src="item.image || 'https://via.placeholder.com/50'" aspect-ratio="1" />
-              </v-list-item-avatar>
-              <v-list-item-content>
-                <v-list-item-title class="text-h6 font-weight-bold">{{ item.name }}</v-list-item-title>
-                <v-list-item-subtitle class="text-truncate">{{ item.description || 'Không có mô tả' }}</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-list-item-action-text class="text-right price">
-                  {{ item.price.toLocaleString('vi-VN') }} đ
-                </v-list-item-action-text>
-                <v-btn icon small @click="removeFromMenu(item._id)">
+              <div v-if="item.type === 'menuItem'">
+                <v-list-item>
+                  <v-list-item-avatar>
+                    <v-img :src="item.data.image || 'https://via.placeholder.com/50'" aspect-ratio="1" />
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title class="text-h6 font-weight-bold">{{ item.data.name }}</v-list-item-title>
+                    <v-list-item-subtitle class="text-truncate">{{ item.data.description || 'Không có mô tả' }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                  <v-list-item-action>
+                    <v-list-item-action-text class="text-right price">
+                      {{ item.data.price.toLocaleString('vi-VN') }} đ
+                    </v-list-item-action-text>
+                    <v-btn icon small @click="removeFromLayout(item.i)">
+                      <v-icon color="error">mdi-close</v-icon>
+                    </v-btn>
+                  </v-list-item-action>
+                </v-list-item>
+              </div>
+              <div v-else-if="item.type === 'title'" @dblclick="editBlock(item)">
+                <div :style="{color: item.data.color, textAlign: item.data.align, fontSize: item.data.fontSize + 'px', fontWeight: 'bold'}">
+                  {{ item.data.text }}
+                </div>
+                <v-btn icon small @click="removeFromLayout(item.i)">
                   <v-icon color="error">mdi-close</v-icon>
                 </v-btn>
-              </v-list-item-action>
-            </v-list-item>
-          </draggable>
-          <v-alert v-if="!menu.length" type="info" dense>
-            Chưa có món nào trong menu
+              </div>
+              <div v-else-if="item.type === 'text'" @dblclick="editBlock(item)">
+                <div :style="{color: item.data.color, textAlign: item.data.align, fontSize: item.data.fontSize + 'px'}">
+                  {{ item.data.text }}
+                </div>
+                <v-btn icon small @click="removeFromLayout(item.i)">
+                  <v-icon color="error">mdi-close</v-icon>
+                </v-btn>
+              </div>
+              <div v-else-if="item.type === 'image'" @dblclick="editBlock(item)">
+                <v-img :src="item.data.url" :alt="item.data.alt" contain height="100%"></v-img>
+                <v-btn icon small @click="removeFromLayout(item.i)">
+                  <v-icon color="error">mdi-close</v-icon>
+                </v-btn>
+              </div>
+            </grid-item>
+          </grid-layout>
+          <v-alert v-if="!layout.length" type="info" dense>
+            Chưa có thành phần nào trong menu
           </v-alert>
         </v-card-text>
         <v-card-actions>
@@ -239,15 +336,20 @@
 <script>
 import axios from 'axios';
 import draggable from 'vuedraggable';
+import { GridLayout, GridItem } from 'vue-grid-layout';
 import { EventBus } from '../event-bus';
 
 export default {
   name: 'MenuBuilder',
-  components: { draggable },
+  components: {
+    draggable,
+    GridLayout,
+    GridItem,
+  },
   data() {
     return {
       foods: [],
-      menu: [],
+      layout: [],
       menus: [],
       loading: false,
       error: null,
@@ -257,11 +359,15 @@ export default {
       selectedMenuId: null,
       updateMenuDialog: false,
       menuName: '',
+      // Dialog chỉnh sửa block
+      editDialog: false,
+      editBlockIndex: null,
+      editBlockData: null,
     };
   },
   computed: {
     isValidMenu() {
-      return this.menuName && this.menu.length > 0;
+      return this.menuName && this.layout.length > 0;
     },
   },
   mounted() {
@@ -308,8 +414,8 @@ export default {
           this.menus = res.data.map(item => ({
             _id: item._id.toString(),
             name: item.name || 'Menu không tên',
+            image: item.image || 'https://via.placeholder.com/50',
           }));
-          console.log('Fetched menus:', this.menus);
         } else {
           throw new Error('Dữ liệu API không phải mảng');
         }
@@ -322,15 +428,11 @@ export default {
         this.loading = false;
       }
     },
-    async viewMenuDetails(menuId) {
+   async viewMenuDetails(menuId) {
       try {
         this.loading = true;
         const res = await axios.get(`http://localhost:3000/api/menus/${menuId}`, { timeout: 5000 });
-        this.menu = res.data.items.map(item => ({
-          _id: item._id,
-          name: item.name,
-          price: Number(item.price),
-        }));
+        this.layout = res.data.layout || []; // Lấy đúng trường layout
         this.menuName = res.data.name || '';
         this.selectedMenuId = menuId;
       } catch (err) {
@@ -343,30 +445,64 @@ export default {
       }
     },
     cloneFood(food) {
-      return { ...food };
+      return {
+        _id: food._id,
+        name: food.name,
+        price: food.price,
+        description: food.description || '',
+        category: food.category || '',
+        image: food.image || 'https://via.placeholder.com/50',
+      };
     },
-    removeFromMenu(id) {
-      this.menu = this.menu.filter(item => item._id !== id);
+    addToLayout(food) {
+      const newItem = {
+        x: 0,
+        y: 0,
+        w: 2,
+        h: 2,
+        i: String(Date.now()) + '-' + Math.random(),
+        type: 'menuItem',
+        data: this.cloneFood(food),
+      };
+      this.layout.push(newItem);
     },
-    async saveMenu() {
-      console.log('Sending data:', { name: this.menuName, menu: this.menu });
-      try {
-        const response = await axios.post('http://localhost:3000/api/menus', { name: this.menuName, menu: this.menu });
-        console.log('Response from saveMenu:', response.data);
-        this.snackbarText = 'Menu đã được lưu thành công!';
-        this.snackbarColor = 'success';
-        this.snackbar = true;
-        this.menu = [];
-        this.menuName = '';
-        this.fetchMenus();
-      } catch (err) {
-        this.error = `Lỗi khi lưu menu: ${err.response?.data?.message || err.message}`;
-        this.snackbarText = this.error;
-        this.snackbarColor = 'error';
-        this.snackbar = true;
+    // Thêm block tiêu đề
+    addTitleBlock() {
+      this.layout.push({
+        x: 0, y: 0, w: 12, h: 1, i: String(Date.now()) + '-title', type: 'title',
+        data: { text: 'Tiêu đề mới', color: '#222', align: 'center', fontSize: 24 }
+      });
+    },
+    // Thêm block đoạn văn
+    addTextBlock() {
+      this.layout.push({
+        x: 0, y: 1, w: 12, h: 2, i: String(Date.now()) + '-text', type: 'text',
+        data: { text: 'Nội dung mô tả...', color: '#444', align: 'left', fontSize: 16 }
+      });
+    },
+    // Thêm block ảnh
+    addImageBlock() {
+      this.layout.push({
+        x: 0, y: 2, w: 6, h: 4, i: String(Date.now()) + '-img', type: 'image',
+        data: { url: 'https://via.placeholder.com/150', alt: 'Ảnh minh họa' }
+      });
+    },
+    removeFromLayout(id) {
+      this.layout = this.layout.filter(item => item.i !== id);
+    },
+    // Chỉnh sửa block
+    editBlock(item) {
+      this.editBlockIndex = this.layout.findIndex(i => i.i === item.i);
+      this.editBlockData = JSON.parse(JSON.stringify(item.data));
+      this.editDialog = true;
+    },
+    saveEditBlock() {
+      if (this.editBlockIndex !== null && this.editBlockData) {
+        this.$set(this.layout[this.editBlockIndex], 'data', {...this.editBlockData});
       }
+      this.editDialog = false;
     },
-    openUpdateMenuDialog() {
+     openUpdateMenuDialog() {
       if (this.selectedMenuId) {
         this.updateMenuDialog = true;
       } else {
@@ -375,24 +511,64 @@ export default {
         this.snackbar = true;
       }
     },
-    async updateMenu() {
-      console.log('Updating menu with data:', { name: this.menuName, items: this.menu });
-      try {
-        if (!this.selectedMenuId) throw new Error('Không có menu được chọn');
-        const response = await axios.put(`http://localhost:3000/api/menus/${this.selectedMenuId}`, { name: this.menuName, items: this.menu });
-        console.log('Response from updateMenu:', response.data);
-        this.snackbarText = 'Menu đã được cập nhật thành công!';
-        this.snackbarColor = 'success';
-        this.snackbar = true;
-        this.updateMenuDialog = false;
-        this.fetchMenus();
-      } catch (err) {
-        this.error = `Lỗi khi cập nhật menu: ${err.response?.data?.message || err.message}`;
-        this.snackbarText = this.error;
-        this.snackbarColor = 'error';
-        this.snackbar = true;
+   async saveMenu() {
+  if (!this.menuName || this.layout.length === 0) {
+    this.snackbarText = 'Vui lòng nhập tên menu và thêm ít nhất một thành phần.';
+    this.snackbarColor = 'warning';
+    this.snackbar = true;
+    return;
+  }
+  try {
+    const payload = {
+      name: this.menuName,
+      layout: this.layout // Lưu toàn bộ layout
+      
+    };
+    console.log('Payload gửi lên:', JSON.stringify(payload, null, 2));
+    await axios.post('http://localhost:3000/api/menus', payload, {
+      headers: {
+        'Content-Type': 'application/json'
       }
-    },
+    });
+    this.snackbarText = 'Menu đã được lưu thành công!';
+    this.snackbarColor = 'success';
+    this.snackbar = true;
+    this.layout = [];
+    this.menuName = '';
+    this.fetchMenus();
+  } catch (err) {
+    let errorMsg = 'Lỗi khi lưu menu';
+    if (err.response) {
+      errorMsg += `: ${err.response.data.message || err.response.statusText}`;
+    } else {
+      errorMsg += `: ${err.message}`;
+    }
+    this.error = errorMsg;
+    this.snackbarText = errorMsg;
+    this.snackbarColor = 'error';
+    this.snackbar = true;
+  }
+},
+
+async updateMenu() {
+  try {
+    if (!this.selectedMenuId) throw new Error('Không có menu được chọn');
+    await axios.put(`http://localhost:3000/api/menus/${this.selectedMenuId}`, {
+      name: this.menuName,
+      layout: this.layout // Lưu toàn bộ layout
+    });
+    this.snackbarText = 'Menu đã được cập nhật thành công!';
+    this.snackbarColor = 'success';
+    this.snackbar = true;
+    this.updateMenuDialog = false;
+    this.fetchMenus();
+  } catch (err) {
+    this.error = `Lỗi khi cập nhật menu: ${err.response?.data?.message || err.message}`;
+    this.snackbarText = this.error;
+    this.snackbarColor = 'error';
+    this.snackbar = true;
+  }
+},
     async deleteMenu() {
       if (!this.selectedMenuId) {
         this.snackbarText = 'Vui lòng chọn một menu để xóa!';
@@ -406,7 +582,7 @@ export default {
         this.snackbarText = 'Menu đã được xóa thành công!';
         this.snackbarColor = 'success';
         this.snackbar = true;
-        this.menu = [];
+        this.layout = [];
         this.menuName = '';
         this.selectedMenuId = null;
         this.fetchMenus();
@@ -419,17 +595,12 @@ export default {
     },
     selectMenu(menuId) {
       this.selectedMenuId = menuId;
-    },
-  },
+    }
+  }
 };
 </script>
 
 <style scoped>
-.drag-area {
-  min-height: 300px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-}
 .drag-list {
   min-height: 100px;
 }
@@ -448,5 +619,10 @@ export default {
   font-weight: 500;
   color: #d32f2f;
   min-width: 80px;
+}
+.grid-area {
+  min-height: 300px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
 }
 </style>
