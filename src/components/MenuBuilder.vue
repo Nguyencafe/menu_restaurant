@@ -2,7 +2,7 @@
   <v-container>
     <v-row>
       <!-- Menu đang thiết kế -->
-      <v-col cols="6">
+      <v-col cols="12" md="8">
         <v-card outlined class="pa-4" min-height="400">
           <v-card-title class="text-h6">Menu đang thiết kế</v-card-title>
           <v-divider />
@@ -19,6 +19,13 @@
               <v-btn small color="primary" @click="addTitleBlock">Thêm tiêu đề</v-btn>
               <v-btn small color="secondary" @click="addTextBlock">Thêm đoạn văn</v-btn>
               <v-btn small color="info" @click="addImageBlock">Thêm ảnh</v-btn>
+              <input
+                ref="imageInput"
+                type="file"
+                accept="image/*"
+                style="display: none"
+                @change="handleImageUpload"
+              />
             </v-row>
             <grid-layout
               :layout.sync="layout"
@@ -38,52 +45,67 @@
                 :w="item.w"
                 :h="item.h"
                 :i="item.i"
+                class="menu-block"
               >
-                <!-- Block món ăn -->
-                <div v-if="item.type === 'menuItem'">
-                  <v-list-item>
-                    <v-list-item-avatar>
-                      <v-img :src="item.data.image || 'https://via.placeholder.com/50'" aspect-ratio="1" />
-                    </v-list-item-avatar>
-                    <v-list-item-content>
-                      <v-list-item-title class="text-h6 font-weight-bold">{{ item.data.name }}</v-list-item-title>
-                      <v-list-item-subtitle class="text-truncate">{{ item.data.description || 'Không có mô tả' }}</v-list-item-subtitle>
-                    </v-list-item-content>
-                    <v-list-item-action>
-                      <v-list-item-action-text class="text-right price">
-                        {{ item.data.price.toLocaleString('vi-VN') }} đ
-                      </v-list-item-action-text>
-                      <v-btn icon small @click="removeFromLayout(item.i)">
-                        <v-icon color="error">mdi-close</v-icon>
-                      </v-btn>
-                    </v-list-item-action>
-                  </v-list-item>
-                </div>
-                <!-- Block tiêu đề -->
-                <div v-else-if="item.type === 'title'" @dblclick="editBlock(item)">
-                  <div :style="{color: item.data.color, textAlign: item.data.align, fontSize: item.data.fontSize + 'px', fontWeight: 'bold'}">
+                <div v-if="item.type === 'menuItem'" class="food-item">
+              <v-img
+                v-if="item.data.image"
+                :src="item.data.image"
+                alt="Ảnh món ăn"
+                max-width="50"
+                max-height="50"
+                class="mr-2"
+                style="float:left; margin-right: 12px;"
+              ></v-img>
+              <div class="food-header">
+                <div class="food-name">{{ item.data.name }}</div>
+                <div class="food-price">{{ formatPrice(item.data.price) }} đ</div>
+              </div>
+              <div v-if="item.data.description" class="food-description">
+                {{ item.data.description }}
+              </div>
+              <v-btn icon small @click="removeFromLayout(item.i)" class="remove-btn">
+                <v-icon color="error">mdi-close</v-icon>
+              </v-btn>
+            </div>
+
+                <!-- Block tiêu đề - CẬP NHẬT -->
+                <div v-else-if="item.type === 'title'" @dblclick="editBlock(item)" class="title-block">
+                  <h3 :style="{color: item.data.color, textAlign: item.data.align}">
                     {{ item.data.text }}
-                  </div>
-                  <v-btn icon small @click="removeFromLayout(item.i)">
+                  </h3>
+                  <v-btn icon small @click="removeFromLayout(item.i)" class="remove-btn">
                     <v-icon color="error">mdi-close</v-icon>
                   </v-btn>
                 </div>
-                <!-- Block đoạn văn -->
-                <div v-else-if="item.type === 'text'" @dblclick="editBlock(item)">
-                  <div :style="{color: item.data.color, textAlign: item.data.align, fontSize: item.data.fontSize + 'px'}">
+
+                <!-- Block đoạn văn - CẬP NHẬT -->
+                <div v-else-if="item.type === 'text'" @dblclick="editBlock(item)" class="text-block">
+                  <p :style="{color: item.data.color, textAlign: item.data.align}">
                     {{ item.data.text }}
-                  </div>
-                  <v-btn icon small @click="removeFromLayout(item.i)">
+                  </p>
+                  <v-btn icon small @click="removeFromLayout(item.i)" class="remove-btn">
                     <v-icon color="error">mdi-close</v-icon>
                   </v-btn>
                 </div>
-                <!-- Block ảnh -->
-                <div v-else-if="item.type === 'image'" @dblclick="editBlock(item)">
-                  <v-img :src="item.data.url" :alt="item.data.alt" contain height="100%"></v-img>
-                  <v-btn icon small @click="removeFromLayout(item.i)">
+                  <!-- Block ảnh -->
+                <div v-else-if="item.type === 'image'" class="image-block">
+                  <v-img
+                    :src="item.data.url"
+                    :alt="item.data.alt"
+                    height="120"
+                    max-width="100%"
+                    contain
+                    class="rounded"
+                  ></v-img>
+                  <v-btn icon small @click="removeFromLayout(item.i)" class="remove-btn">
                     <v-icon color="error">mdi-close</v-icon>
                   </v-btn>
                 </div>
+                <!-- Hiển thị thông báo nếu không có thành phần nào -->
+                <v-alert v-if="!layout.length" type="info" dense>
+                  Chưa có thành phần nào trong menu
+                </v-alert>
               </grid-item>
             </grid-layout>
             <v-alert v-if="!layout.length" type="info" dense>
@@ -118,7 +140,7 @@
       </v-col>
 
       <!-- Danh sách món ăn và Danh sách menu -->
-      <v-col cols="6">
+      <v-col cols="12" md="4">
         <!-- Danh sách món ăn -->
         <v-card outlined class="pa-4 mb-4">
           <v-card-title class="text-h6">
@@ -379,6 +401,9 @@ export default {
     EventBus.$off('foods-updated', this.fetchFoods);
   },
   methods: {
+      formatPrice(price) {
+        return Number(price).toLocaleString('vi-VN');
+      },
     async fetchFoods() {
       try {
         this.loading = true;
@@ -482,11 +507,8 @@ export default {
     },
     // Thêm block ảnh
     addImageBlock() {
-      this.layout.push({
-        x: 0, y: 2, w: 6, h: 4, i: String(Date.now()) + '-img', type: 'image',
-        data: { url: 'https://via.placeholder.com/150', alt: 'Ảnh minh họa' }
-      });
-    },
+        this.$refs.imageInput.click();
+      },
     removeFromLayout(id) {
       this.layout = this.layout.filter(item => item.i !== id);
     },
@@ -550,6 +572,21 @@ export default {
   }
 },
 
+handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    this.layout.push({
+      x: 0, y: 0, w: 6, h: 4, i: String(Date.now()) + '-img', type: 'image',
+      data: { url: e.target.result, alt: file.name }
+    });
+  };
+  reader.readAsDataURL(file);
+  // Reset input để lần sau chọn lại vẫn nhận sự kiện
+  event.target.value = '';
+},
+
 async updateMenu() {
   try {
     if (!this.selectedMenuId) throw new Error('Không có menu được chọn');
@@ -601,28 +638,99 @@ async updateMenu() {
 </script>
 
 <style scoped>
-.drag-list {
-  min-height: 100px;
-}
-.menu-item {
-  border-bottom: 1px solid #eee;
-  padding: 10px 0;
-  transition: background-color 0.3s;
-}
-.menu-item:last-child {
-  border-bottom: none;
-}
-.menu-item:hover {
-  background-color: #f9f9f9;
-}
-.price {
-  font-weight: 500;
-  color: #d32f2f;
-  min-width: 80px;
-}
+/* Thêm vào phần scoped style */
 .grid-area {
-  min-height: 300px;
+  min-height: 400px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.menu-block {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.menu-block:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.food-item {
+  padding: 16px;
+  position: relative;
+}
+
+.food-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.food-name {
+  font-weight: 700;
+  font-size: 18px;
+  flex: 1;
+}
+
+.food-price {
+  font-weight: 600;
+  color: #e53935;
+  margin-left: 16px;
+  font-size: 16px;
+}
+
+.food-description {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.title-block {
+  padding: 16px;
   background-color: #f5f5f5;
-  border-radius: 4px;
+  text-align: center;
+}
+
+.title-block h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.text-block {
+  padding: 16px;
+}
+
+.text-block p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.image-block {
+  position: relative;
+  padding: 8px;
+  min-height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.remove-btn:hover {
+  opacity: 1;
 }
 </style>
