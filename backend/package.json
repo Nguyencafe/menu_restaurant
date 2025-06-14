@@ -16,8 +16,10 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "fs": "^0.0.1-security",
+    "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0",
+    "vue-cropperjs": "^5.0.0",
     "vue-grid-layout": "^2.4.0"
   }
 }

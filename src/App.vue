@@ -15,24 +15,17 @@
           MENU RESTAURANT
         </span>
       </div>
+      <v-spacer></v-spacer>
+      <v-btn v-if="!isAuthenticated" to="/login" text>Đăng nhập</v-btn>
+      <v-btn v-if="!isAuthenticated" to="/register" text>Đăng ký</v-btn>
+      <v-btn v-if="isAuthenticated" to="/dashboard" text>Dashboard</v-btn>
+      <v-btn v-if="isAuthenticated" @click="logout" text>Đăng xuất</v-btn>
     </v-app-bar>
 
     <!-- Nội dung chính -->
     <v-main>
       <v-container>
-        <v-tabs v-model="tab" background-color="grey lighten-4" grow>
-          <v-tab>QUẢN LÝ MÓN ĂN</v-tab>
-          <v-tab>XÂY DỰNG MENU</v-tab>
-        </v-tabs>
-
-        <v-tabs-items v-model="tab">
-          <v-tab-item>
-            <food-manager />
-          </v-tab-item>
-          <v-tab-item>
-            <menu-builder />
-          </v-tab-item>
-        </v-tabs-items>
+        <router-view></router-view>
       </v-container>
     </v-main>
 
@@ -51,22 +44,25 @@
 </template>
 
 <script>
-import FoodManager from './components/FoodManager.vue';
-import MenuBuilder from './components/MenuBuilder.vue';
-
 export default {
   name: 'App',
-  components: {
-    FoodManager,
-    MenuBuilder,
-  },
   data() {
     return {
-      tab: 0,
       snackbar: false,
       snackbarText: '',
       snackbarColor: 'success',
     };
+  },
+  computed: {
+    isAuthenticated() {
+      return !!localStorage.getItem('token');
+    },
+  },
+  methods: {
+    logout() {
+      localStorage.removeItem('token');
+      this.$router.push('/login');
+    },
   },
   created() {
     // Lắng nghe sự kiện snackbar từ các component con

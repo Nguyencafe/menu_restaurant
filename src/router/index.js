@@ -3,7 +3,7 @@ import VueRouter from 'vue-router'
 import Login from '../components/Login.vue'
 import Register from '../components/Register.vue'
 import Home from '../components/Home.vue'
-
+import Dashboard from '../components/Dashboard.vue'
 
 Vue.use(VueRouter)
 
@@ -11,7 +11,8 @@ const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
-  { path: '/home', name: 'Home', component: Home, meta: { requiresAuth: true } }
+  { path: '/home', name: 'Home', component: Home, meta: { requiresAuth: true } },
+  { path: '/dashboard', name: 'Dashboard', component: Dashboard, meta: { requiresAuth: true } }
 ]
 
 const router = new VueRouter({
@@ -20,7 +21,6 @@ const router = new VueRouter({
   routes
 })
 
-// Xác thực route
 router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('token')
   

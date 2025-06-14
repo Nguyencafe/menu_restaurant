@@ -10,8 +10,12 @@
   "dependencies": {
     "axios": "^1.9.0",
     "core-js": "^3.8.3",
+    "html2canvas": "^1.4.1",
     "vue": "^2.6.14",
     "vue-axios": "^3.5.2",
+    "vue-cropperjs": "^4.1.0",
+    "vue-grid-layout": "^2.4.0",
+    "vue-router": "^3.6.5",
     "vuedraggable": "^2.24.3",
     "vuetify": "^2.6.0"
   },
